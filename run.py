@@ -3,9 +3,12 @@ import json
 from psutil import Popen
 import subprocess
 import sys
-KCC_PATH=r"E:\Program Files\kcc"
+import time
+
+KCC_PATH=None
 
 def getMonitorPaths():
+    global KCC_PATH
     savePath = None
     paths = []
     f = open("PathsToMonitor","r",encoding="utf-8")
@@ -14,6 +17,7 @@ def getMonitorPaths():
     for line in lines:
         line = line.replace("\n","")
         if "#" in line: savePath=line.replace("#","")
+        elif "!" in line: KCC_PATH=line.replace("!","")
         else: paths.append(line)
 
     return [savePath,paths]
@@ -50,25 +54,31 @@ def getConvertedFileList():
 
 convertedFileList = getConvertedFileList()
 
-savePath,pathsToMonite = getMonitorPaths()
-print(savePath)
-print()
-files = getAllFiles(pathsToMonite)
-arguments=getConvertArgrments()
+while True:
+    print("\n---------------------------------------")
+    savePath,pathsToMonite = getMonitorPaths()
+    print("SAVE PATH: ",savePath)
+    print("MONITOR PATH: ",pathsToMonite)
+    files = getAllFiles(pathsToMonite)
+    arguments=getConvertArgrments()
+    print("USE ARGUMENTS: ",arguments)
 
+    for idx,file in enumerate(files):
+        file_name = os.path.basename(file)
+        if file_name in convertedFileList: continue
 
-for idx,file in enumerate(files):
-    file_name = os.path.basename(file)
-    if file_name in convertedFileList: continue
+        print("\n==========================")
+        print("%d/%d. Start to converting file" % (idx+1,len(files)))
+        print(file)
 
-    print("%d/%d. Start to converting file" % (idx+1,len(files)))
-    print(file)
+        if savePath is not None: arguments+=" -o "+savePath
+        
+        script_path = os.path.join(KCC_PATH,"kcc-c2e.py")
+        cmd = 'python3 "%s" %s "%s"' % (script_path,arguments,file)
+        
+        subprocess.call(cmd,shell=True)
 
-    if savePath is not None: arguments+=" -o "+savePath
+        convertedFileList.append(file_name)
+        saveConvertedFileList(convertedFileList)
 
-    script_path = os.path.join(KCC_PATH,"kcc-c2e.py")
-    cmd = 'python "%s" %s "%s"' % (script_path,arguments,file)
-    subprocess.call(cmd)
-
-    convertedFileList.append(file_name)
-    saveConvertedFileList(convertedFileList)
+    time.sleep(10)
