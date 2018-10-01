@@ -77,8 +77,9 @@ while True:
         cmd = 'python3 "%s" %s "%s"' % (script_path,arguments,file)
         
         subprocess.call(cmd,shell=True)
-
+        if savePath is not None:
+            os.chmod(os.path.join(savePath,file_name[:-4]+".mobi"),0o777)
         convertedFileList.append(file_name)
         saveConvertedFileList(convertedFileList)
 
-    time.sleep(10)
+    time.sleep(600)
